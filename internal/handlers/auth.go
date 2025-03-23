@@ -3,23 +3,19 @@ package handlers
 import (
 	"net/http"
 
-	"itv-task/config"
+	"itv-task/internal/models"
+	"itv-task/internal/services"
 	"itv-task/pkg/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
-const (
-	HardcodedUsername = "admin"
-	HardcodedPassword = "password123"
-)
-
 type AuthHandler struct {
-	Config *config.Config
+	AuthService *services.AuthService
 }
 
-func NewAuthHandler(cfg *config.Config) *AuthHandler {
-	return &AuthHandler{Config: cfg}
+func NewAuthHandler(authService *services.AuthService) *AuthHandler {
+	return &AuthHandler{AuthService: authService}
 }
 
 // Login godoc
@@ -30,37 +26,24 @@ func NewAuthHandler(cfg *config.Config) *AuthHandler {
 // @Produce json
 // @Param request body models.LoginRequest true "Login credentials"
 // @Success 200 {object} models.LoginResponse
-// @Failure 400 {object} gin.H "Invalid request"
-// @Failure 401 {object} gin.H "Invalid credentials"
-// @Failure 500 {object} gin.H "Failed to generate tokens"
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Router /auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
-	var request struct {
-		Username string `json:"username"`
-		Password string `json:"password"`
-	}
-
+	var request models.LoginRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid request", "Failed to parse request body")
 		return
 	}
 
-	if request.Username != HardcodedUsername || request.Password != HardcodedPassword {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid credentials"})
-		return
-	}
-
-	accessToken, refreshToken, err := utils.GenerateTokens(request.Username, h.Config)
+	response, err := h.AuthService.Login(request)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate tokens"})
+		utils.SendErrorResponse(c, http.StatusUnauthorized, "Invalid credentials", err.Error())
 		return
 	}
 
-	// Send response
-	c.JSON(http.StatusOK, gin.H{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	})
+	c.JSON(http.StatusOK, response)
 }
 
 // RefreshToken godoc
@@ -71,40 +54,22 @@ func (h *AuthHandler) Login(c *gin.Context) {
 // @Produce json
 // @Param request body models.RefreshTokenRequest true "Refresh token"
 // @Success 200 {object} models.LoginResponse
-// @Failure 400 {object} gin.H "Invalid request"
-// @Failure 401 {object} gin.H "Invalid or expired refresh token"
-// @Failure 500 {object} gin.H "Failed to generate new tokens"
+// @Failure 400 {object} models.ErrorResponse
+// @Failure 401 {object} models.ErrorResponse
+// @Failure 500 {object} models.ErrorResponse
 // @Router /auth/refresh [post]
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	var request struct {
-		RefreshToken string `json:"refresh_token"`
-	}
-
+	var request models.RefreshTokenRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request"})
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid request", "Failed to parse request body")
 		return
 	}
 
-	claims, err := utils.ValidateToken(request.RefreshToken, true, h.Config)
+	response, err := h.AuthService.RefreshToken(request)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or expired refresh token"})
+		utils.SendErrorResponse(c, http.StatusUnauthorized, "Invalid or expired refresh token", err.Error())
 		return
 	}
 
-	username, ok := claims["username"].(string)
-	if !ok {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid token payload"})
-		return
-	}
-
-	accessToken, refreshToken, err := utils.GenerateTokens(username, h.Config)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to generate new tokens"})
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	})
+	c.JSON(http.StatusOK, response)
 }

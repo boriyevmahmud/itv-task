@@ -3,6 +3,6 @@ package config
 import "time"
 
 const (
-	AccessTokenTTL  = time.Minute * 15
+	AccessTokenTTL  = time.Hour * 24
 	RefreshTokenTTL = time.Hour * 24 * 7
 )

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"fmt"
 	"itv-task/internal/models"
 	"log"
 
@@ -15,27 +16,34 @@ func NewMovieRepository(db *gorm.DB) *MovieRepository {
 	return &MovieRepository{db: db}
 }
 
-func (r *MovieRepository) Create(movie *models.Movie) error {
-	if err := r.db.Create(movie).Error; err != nil {
-		log.Println("❌ Failed to create movie:", err)
-		return err
+func (r *MovieRepository) Create(movie *models.CreateMovieRequest) (uint, error) {
+	gormModel := models.Movie{
+		Title:    movie.Title,
+		Director: movie.Director,
+		Year:     movie.Year,
+		Plot:     movie.Plot,
 	}
-	return nil
+	if err := r.db.Table("movies").Create(&gormModel).Error; err != nil {
+		log.Println("❌ Failed to create movie:", err)
+		return 0, err
+	}
+	return gormModel.ID, nil
 }
 
-func (r *MovieRepository) GetByID(id uint) (*models.Movie, error) {
-	var movie models.Movie
-	if err := r.db.First(&movie, id).Error; err != nil {
+func (r *MovieRepository) GetByID(id uint) (*models.MovieResponse, error) {
+	var movie models.MovieResponse
+	if err := r.db.Table("movies").First(&movie, id).Error; err != nil {
 		log.Println("❌ Movie not found:", err)
 		return nil, err
 	}
 	return &movie, nil
 }
+func (r *MovieRepository) GetAll(title, director string, year int, sortBy, sortOrder string, limit, offset int) (models.MovieListResponse, error) {
+	var movies []models.MovieResponse
+	var totalCount int64
+	query := r.db.Model(&models.Movie{})
 
-func (r *MovieRepository) GetAll(title, director string, year int, sortBy string, limit, offset int) ([]models.Movie, error) {
-	var movies []models.Movie
-	query := r.db
-
+	// Apply filters
 	if title != "" {
 		query = query.Where("title ILIKE ?", "%"+title+"%")
 	}
@@ -46,25 +54,54 @@ func (r *MovieRepository) GetAll(title, director string, year int, sortBy string
 		query = query.Where("year = ?", year)
 	}
 
-	if sortBy == "title" {
-		query = query.Order("title ASC")
-	} else if sortBy == "year" {
-		query = query.Order("year DESC")
-	} else {
-		query = query.Order("id ASC")
+	// Get total count before applying limit & offset
+	if err := query.Count(&totalCount).Error; err != nil {
+		log.Println("❌ Failed to count movies:", err)
+		return models.MovieListResponse{}, err
 	}
 
-	query = query.Limit(limit).Offset(offset)
+	switch sortOrder {
+	case "asc":
+		sortOrder = " AS "
+	case "desc":
+		sortOrder = " DESC "
+	default:
+		sortOrder = " DESC "
+	}
+
+	// Apply sorting
+	switch sortBy {
+	case "title":
+		query = query.Order("title " + sortBy)
+	case "year":
+		query = query.Order("year " + sortOrder)
+	case "created_at":
+		query = query.Order("created_at " + sortOrder)
+	case "director":
+		query = query.Order("director " + sortBy)
+	default:
+		query = query.Order("id " + sortBy)
+	}
+
+	if limit > 0 {
+		query = query.Limit(limit)
+	}
+	query = query.Offset(offset)
 
 	if err := query.Find(&movies).Error; err != nil {
 		log.Println("❌ Failed to retrieve movies:", err)
-		return nil, err
+		return models.MovieListResponse{}, err
 	}
-	return movies, nil
+
+	return models.MovieListResponse{
+		Movies: movies,
+		Count:  int(totalCount),
+	}, nil
 }
 
-func (r *MovieRepository) Update(movie *models.Movie) error {
-	if err := r.db.Save(movie).Error; err != nil {
+func (r *MovieRepository) Update(movie *models.UpdateMovieRequest) error {
+	fmt.Println("movie: ", movie)
+	if err := r.db.Table("movies").Save(movie).Error; err != nil {
 		log.Println("❌ Failed to update movie:", err)
 		return err
 	}
@@ -72,7 +109,7 @@ func (r *MovieRepository) Update(movie *models.Movie) error {
 }
 
 func (r *MovieRepository) Delete(id uint) error {
-	if err := r.db.Where("id = ?", id).Delete(&models.Movie{}).Error; err != nil {
+	if err := r.db.Table("movies").Where("id = ?", id).Delete(&models.Movie{}).Error; err != nil {
 		log.Println("❌ Failed to soft delete movie:", err)
 		return err
 	}

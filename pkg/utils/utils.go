@@ -5,7 +5,9 @@ import (
 	"time"
 
 	"itv-task/config"
+	"itv-task/internal/models"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -59,4 +61,8 @@ func ValidateToken(tokenString string, isRefresh bool, cfg *config.Config) (jwt.
 	}
 
 	return claims, nil
+}
+
+func SendErrorResponse(c *gin.Context, code int, message string, detail string) {
+	c.JSON(code, models.NewErrorResponse(code, message, detail))
 }

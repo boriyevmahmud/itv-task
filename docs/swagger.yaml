@@ -1,0 +1,369 @@
+definitions:
+  models.CreateMovieRequest:
+    properties:
+      director:
+        example: Christopher Nolan
+        maxLength: 255
+        type: string
+      plot:
+        example: A skilled thief is given a chance to erase his criminal past by performing
+          an impossible task.
+        type: string
+      title:
+        example: Inception
+        maxLength: 255
+        type: string
+      year:
+        example: 2010
+        maximum: 2025
+        minimum: 1888
+        type: integer
+    required:
+    - director
+    - title
+    - year
+    type: object
+  models.ErrorResponse:
+    properties:
+      code:
+        description: HTTP status code
+        type: integer
+      detail:
+        description: Optional detailed error message
+        type: string
+      message:
+        description: Error message
+        type: string
+    type: object
+  models.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  models.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  models.MovieListResponse:
+    properties:
+      count:
+        example: 100
+        type: integer
+      movies:
+        items:
+          $ref: '#/definitions/models.MovieResponse'
+        type: array
+    type: object
+  models.MovieResponse:
+    properties:
+      created_at:
+        example: "2025-03-22T15:04:05Z"
+        type: string
+      director:
+        example: Christopher Nolan
+        type: string
+      id:
+        example: 1
+        type: integer
+      plot:
+        example: A skilled thief is given a chance to erase his criminal past by performing
+          an impossible task.
+        type: string
+      title:
+        example: Inception
+        type: string
+      updated_at:
+        example: "2025-03-22T15:04:05Z"
+        type: string
+      year:
+        example: 2010
+        type: integer
+    type: object
+  models.RefreshTokenRequest:
+    properties:
+      refresh_token:
+        type: string
+    required:
+    - refresh_token
+    type: object
+  models.UpdateMovieRequest:
+    properties:
+      director:
+        example: Christopher Nolan
+        maxLength: 255
+        type: string
+      plot:
+        example: A skilled thief is given a chance to erase his criminal past by performing
+          an impossible task.
+        type: string
+      title:
+        example: Inception
+        maxLength: 255
+        type: string
+      year:
+        example: 2010
+        maximum: 2025
+        minimum: 1888
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate user with hardcoded credentials
+      parameters:
+      - description: Login credentials
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Login user
+      tags:
+      - Auth
+  /auth/refresh:
+    post:
+      consumes:
+      - application/json
+      description: Generate a new access token using the refresh token
+      parameters:
+      - description: Refresh token
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.RefreshTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Refresh access token
+      tags:
+      - Auth
+  /movies:
+    get:
+      description: Retrieve a list of movies with optional filters
+      parameters:
+      - description: Filter by title
+        in: query
+        name: title
+        type: string
+      - description: Filter by director
+        in: query
+        name: director
+        type: string
+      - description: Filter by year
+        in: query
+        name: year
+        type: integer
+      - description: Limit results
+        in: query
+        name: limit
+        type: integer
+      - description: Offset results
+        in: query
+        name: offset
+        type: integer
+      - description: Sort by field (title, year, created_at, director)
+        in: query
+        name: sort_by
+        type: string
+      - description: Sort order (asc, desc)
+        in: query
+        name: sort_order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.MovieListResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get all movies
+      tags:
+      - movies
+    post:
+      consumes:
+      - application/json
+      description: Add a new movie to the database
+      parameters:
+      - description: Movie data
+        in: body
+        name: movie
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateMovieRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.CreateMovieRequest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Create a new movie
+      tags:
+      - movies
+  /movies/{id}:
+    delete:
+      description: Remove a movie from the database
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Delete a movie
+      tags:
+      - movies
+    get:
+      description: Retrieve a movie using its ID
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.MovieResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      summary: Get a movie by ID
+      tags:
+      - movies
+    put:
+      consumes:
+      - application/json
+      description: Modify an existing movie
+      parameters:
+      - description: Movie ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated movie data
+        in: body
+        name: movie
+        required: true
+        schema:
+          $ref: '#/definitions/models.UpdateMovieRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.UpdateMovieRequest'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update a movie
+      tags:
+      - movies
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

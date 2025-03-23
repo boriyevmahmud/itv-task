@@ -8,4 +8,4 @@ build:
 	CGO_ENABLED=1 GOOS=linux go build -mod=vendor -a -installsuffix cgo -o ${CURRENT_DIR}/bin/${APP} ${APP_CMD_DIR}/main.go
 
 swag_init:
-	swag init -g api/main.go -o api/docs
+	swag init -g cmd/main.go -o docs
