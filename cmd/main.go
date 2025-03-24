@@ -7,6 +7,7 @@ import (
 	"itv-task/internal/handlers"
 	"itv-task/internal/repositories"
 	"itv-task/internal/services"
+	"itv-task/pkg/logger"
 	utils "itv-task/pkg/middleware"
 	"log"
 	"net/http"
@@ -86,6 +87,7 @@ func main() {
 		),
 		config.DatabaseModule, // Ensure database module comes after config
 		fx.Provide(
+			func() logger.Logger { log := logger.New("itv", "Movies"); return log },
 			repositories.NewMovieRepository,
 			services.NewMovieService,
 			handlers.NewMovieHandler,

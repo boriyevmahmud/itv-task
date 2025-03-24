@@ -125,7 +125,7 @@ func (h *MovieHandler) GetAllMovies(c *gin.Context) {
 
 	movies, err := h.service.GetAllMovies(title, director, year, sortBy, sortOrder, limit, offset)
 	if err != nil {
-		utils.SendErrorResponse(c, http.StatusInternalServerError, "Database error", "Failed to retrieve movies")
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Internal server error", "Failed to retrieve movies")
 		return
 	}
 
@@ -151,7 +151,11 @@ func (h *MovieHandler) GetMovieByID(c *gin.Context) {
 
 	movie, err := h.service.GetMovieByID(uint(id))
 	if err != nil {
-		utils.SendErrorResponse(c, http.StatusNotFound, "Movie not found", "No movie found with the given ID")
+		if err.Error() == "record not found" {
+			utils.SendErrorResponse(c, http.StatusNotFound, "Movie not found", "No movie found with the given ID")
+		} else {
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "Internal server error", "Failed to retrieve movie")
+		}
 		return
 	}
 
@@ -187,7 +191,11 @@ func (h *MovieHandler) UpdateMovie(c *gin.Context) {
 
 	_, err = h.service.GetMovieByID(uint(id))
 	if err != nil {
-		utils.SendErrorResponse(c, http.StatusNotFound, "Movie not found", "No movie found with the given ID")
+		if err.Error() == "record not found" {
+			utils.SendErrorResponse(c, http.StatusNotFound, "Movie not found", "No movie found with the given ID")
+		} else {
+			utils.SendErrorResponse(c, http.StatusInternalServerError, "Internal server error", "Failed to retrieve movie")
+		}
 		return
 	}
 
@@ -206,7 +214,7 @@ func (h *MovieHandler) UpdateMovie(c *gin.Context) {
 	movie.ID = uint(id)
 
 	if err := h.service.UpdateMovie(&movie); err != nil {
-		utils.SendErrorResponse(c, http.StatusInternalServerError, "Database error", "Failed to update movie")
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Internal server error", "Failed to update movie")
 		return
 	}
 	c.JSON(http.StatusOK, movie)
@@ -231,7 +239,7 @@ func (h *MovieHandler) DeleteMovie(c *gin.Context) {
 	}
 
 	if err := h.service.DeleteMovie(uint(id)); err != nil {
-		utils.SendErrorResponse(c, http.StatusInternalServerError, "Database error", "Failed to delete movie")
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Internal server error", "Failed to delete movie")
 		return
 	}
 
