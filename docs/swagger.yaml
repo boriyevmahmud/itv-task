@@ -1,4 +1,13 @@
 definitions:
+  models.BulkInsertMoviesRequest:
+    properties:
+      movies:
+        items:
+          $ref: '#/definitions/models.CreateMovieRequest'
+        type: array
+    required:
+    - movies
+    type: object
   models.CreateMovieRequest:
     properties:
       director:
@@ -359,6 +368,40 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update a movie
+      tags:
+      - movies
+  /movies/bulk-insert:
+    post:
+      consumes:
+      - application/json
+      description: Adds multiple movies to the database
+      parameters:
+      - description: List of movies to insert
+        in: body
+        name: movies
+        required: true
+        schema:
+          $ref: '#/definitions/models.BulkInsertMoviesRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Movies created successfully
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request data
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/models.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Bulk insert movies
       tags:
       - movies
 securityDefinitions:

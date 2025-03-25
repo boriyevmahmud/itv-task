@@ -9,7 +9,7 @@ import (
 type Movie struct {
 	gorm.Model
 	ID        uint           `gorm:"primaryKey;autoIncrement" json:"id"`
-	Title     string         `gorm:"type:varchar(255);not null" json:"title"`
+	Title     string         `gorm:"type:varchar(255);not null;uniqueIndex" json:"title"`
 	Director  string         `gorm:"type:varchar(255);not null" json:"director"`
 	Year      int            `gorm:"not null" json:"year"`
 	Plot      string         `gorm:"type:text" json:"plot"`
@@ -23,6 +23,10 @@ type CreateMovieRequest struct {
 	Director string `json:"director" binding:"required,max=255" example:"Christopher Nolan"`
 	Year     int    `json:"year" binding:"required,gte=1888,lte=2025" example:"2010"`
 	Plot     string `json:"plot" example:"A skilled thief is given a chance to erase his criminal past by performing an impossible task."`
+}
+
+type BulkInsertMoviesRequest struct {
+	Movies []CreateMovieRequest `json:"movies" binding:"required,dive,required"`
 }
 
 type UpdateMovieRequest struct {

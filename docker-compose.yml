@@ -1,12 +1,11 @@
 version: "3.8"
 
 services:
-
   db:
     image: postgres:15
     restart: always
     env_file:
-      - .env  # Load environment variables from .env
+      - .env
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
@@ -15,12 +14,18 @@ services:
       - "5433:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d movies"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   app:
     build: .
     ports:
       - "8080:8080"
     env_file:
-      - .env  # Load environment variables from .env
+      - .env
     environment:
       - DB_HOST=${POSTGRES_HOST}
       - DB_PORT=${POSTGRES_PORT}
@@ -28,7 +33,8 @@ services:
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_NAME=${POSTGRES_DATABASE}
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
 volumes:
   db_data:

@@ -25,7 +25,8 @@ func Load() Config {
 	// Load environment variables from .env file
 	if err := godotenv.Load(".env"); err != nil {
 		fmt.Println("Error loading .env file:", err)
-		// panic(err)
+	} else {
+		fmt.Println("Successfully loaded .env file")
 	}
 
 	return Config{

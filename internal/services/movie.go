@@ -96,3 +96,26 @@ func (s *MovieService) DeleteMovie(id uint) error {
 
 	return nil
 }
+
+func (s *MovieService) BulkInsertMovies(movies *models.BulkInsertMoviesRequest) error {
+	s.log.Info("Creating movie", zap.Any("request", movies))
+	err := s.repo.BulkInsertMovies(movies)
+	if err != nil {
+		s.log.Error("Failed to create movie", zap.Any("request", movies), zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
+func (s *MovieService) GetMovieByTitle(title string) (*models.MovieResponse, error) {
+	s.log.Info("getting movie by title", zap.Any("request", title))
+
+	movie, err := s.repo.GetByTitle(title)
+	if err != nil {
+		s.log.Error("Failed to fetch movie by titkle", zap.String("title", title), zap.Error(err))
+		return nil, err
+	}
+
+	return movie, nil
+}

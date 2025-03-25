@@ -49,6 +49,11 @@ func (h *MovieHandler) CreateMovie(c *gin.Context) {
 		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid year", "Year must be between 1888 and 2025")
 		return
 	}
+	_, err := h.service.GetMovieByTitle(movie.Title)
+	if err == nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Movie already exists", "A movie with the same title already exists")
+		return
+	}
 
 	if _, err := h.service.CreateMovie(&movie); err != nil {
 		utils.SendErrorResponse(c, http.StatusInternalServerError, "Internal server error", "Failed to create movie")
@@ -213,6 +218,12 @@ func (h *MovieHandler) UpdateMovie(c *gin.Context) {
 	}
 	movie.ID = uint(id)
 
+	existingMovie, err := h.service.GetMovieByTitle(movie.Title)
+	if err == nil && existingMovie.ID != movie.ID {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Movie already exists", "A movie with the same title already exists")
+		return
+	}
+
 	if err := h.service.UpdateMovie(&movie); err != nil {
 		utils.SendErrorResponse(c, http.StatusInternalServerError, "Internal server error", "Failed to update movie")
 		return
@@ -244,4 +255,50 @@ func (h *MovieHandler) DeleteMovie(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Movie deleted"})
+}
+
+// @Summary Bulk insert movies
+// @Description Adds multiple movies to the database
+// @Tags movies
+// @Accept json
+// @Produce json
+// @Security ApiKeyAuth
+// @Param movies body models.BulkInsertMoviesRequest true "List of movies to insert"
+// @Success 201 {object} map[string]string "Movies created successfully"
+// @Failure 400 {object} models.ErrorResponse "Invalid request data"
+// @Failure 500 {object} models.ErrorResponse "Internal server error"
+// @Router /movies/bulk-insert [post]
+func (h *MovieHandler) BulkInsertMovies(c *gin.Context) {
+	var req models.BulkInsertMoviesRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid request", "Failed to parse request body")
+		return
+	}
+
+	for _, movie := range req.Movies {
+		if len(movie.Title) == 0 || len(movie.Title) > 255 {
+			utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid title", "Title is required and must be <= 255 characters")
+			return
+		}
+		if len(movie.Director) == 0 || len(movie.Director) > 255 {
+			utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid director", "Director is required and must be <= 255 characters")
+			return
+		}
+		if movie.Year < 1888 || movie.Year > 2025 {
+			utils.SendErrorResponse(c, http.StatusBadRequest, "Invalid year", "Year must be between 1888 and 2025")
+			return
+		}
+		_, err := h.service.GetMovieByTitle(movie.Title)
+		if err == nil {
+			utils.SendErrorResponse(c, http.StatusBadRequest, "Movie already exists", "A movie with the same title already exists, title: "+movie.Title)
+			return
+		}
+	}
+
+	if err := h.service.BulkInsertMovies(&req); err != nil {
+		utils.SendErrorResponse(c, http.StatusInternalServerError, "Internal server error", "Failed to create movie")
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{"message": "Movies created"})
 }

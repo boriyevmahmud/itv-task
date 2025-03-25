@@ -49,6 +49,7 @@ func NewRouter(cfg *config.Config, movieHandler *handlers.MovieHandler, authHand
 		authRoutes.POST("/", movieHandler.CreateMovie)
 		authRoutes.PUT("/:id", movieHandler.UpdateMovie)
 		authRoutes.DELETE("/:id", movieHandler.DeleteMovie)
+		authRoutes.POST("/bulk-insert", movieHandler.BulkInsertMovies)
 	}
 
 	return r

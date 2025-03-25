@@ -1,9 +1,9 @@
 package repositories
 
 import (
-	"fmt"
 	"itv-task/internal/models"
 	"log"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -32,7 +32,16 @@ func (r *MovieRepository) Create(movie *models.CreateMovieRequest) (uint, error)
 
 func (r *MovieRepository) GetByID(id uint) (*models.MovieResponse, error) {
 	var movie models.MovieResponse
-	if err := r.db.Table("movies").First(&movie, id).Error; err != nil {
+	if err := r.db.Table("movies").First(&movie, "id = ? AND deleted_at IS NULL ", id).Error; err != nil {
+		log.Println("❌ Movie not found:", err)
+		return nil, err
+	}
+	return &movie, nil
+}
+
+func (r *MovieRepository) GetByTitle(title string) (*models.MovieResponse, error) {
+	var movie models.MovieResponse
+	if err := r.db.Table("movies").First(&movie, "title = ? AND deleted_at IS NULL ", title).Error; err != nil {
 		log.Println("❌ Movie not found:", err)
 		return nil, err
 	}
@@ -100,8 +109,14 @@ func (r *MovieRepository) GetAll(title, director string, year int, sortBy, sortO
 }
 
 func (r *MovieRepository) Update(movie *models.UpdateMovieRequest) error {
-	fmt.Println("movie: ", movie)
-	if err := r.db.Table("movies").Save(movie).Error; err != nil {
+	gormModel := models.Movie{
+		Title:     movie.Title,
+		Director:  movie.Director,
+		Year:      movie.Year,
+		Plot:      movie.Plot,
+		UpdatedAt: time.Now(),
+	}
+	if err := r.db.Table("movies").Save(gormModel).Error; err != nil {
 		log.Println("❌ Failed to update movie:", err)
 		return err
 	}
@@ -113,5 +128,39 @@ func (r *MovieRepository) Delete(id uint) error {
 		log.Println("❌ Failed to soft delete movie:", err)
 		return err
 	}
+	return nil
+}
+
+func (s *MovieRepository) BulkInsertMovies(movies *models.BulkInsertMoviesRequest) error {
+	tx := s.db.Table("movies").Begin() // Start transaction
+	if tx.Error != nil {
+		log.Println("❌ Failed to start transaction:", tx.Error)
+		return tx.Error
+	}
+	defer func() {
+		tx.Rollback()
+	}()
+
+	var gormModel = models.Movie{}
+	for _, movie := range movies.Movies {
+		gormModel = models.Movie{
+			Title:    movie.Title,
+			Director: movie.Director,
+			Year:     movie.Year,
+			Plot:     movie.Plot,
+		}
+		if err := tx.Create(&gormModel).Error; err != nil {
+			tx.Rollback() // Rollback on failure
+			log.Println("❌ Failed to bulk insert movies:", err)
+			return err
+		}
+	}
+
+	// Commit transaction
+	if err := tx.Commit().Error; err != nil {
+		log.Println("❌ Failed to commit transaction:", err)
+		return err
+	}
+
 	return nil
 }

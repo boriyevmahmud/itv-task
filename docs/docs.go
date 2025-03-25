@@ -242,6 +242,60 @@ const docTemplate = `{
                 }
             }
         },
+        "/movies/bulk-insert": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Adds multiple movies to the database",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "movies"
+                ],
+                "summary": "Bulk insert movies",
+                "parameters": [
+                    {
+                        "description": "List of movies to insert",
+                        "name": "movies",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.BulkInsertMoviesRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Movies created successfully",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request data",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/models.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/movies/{id}": {
             "get": {
                 "description": "Retrieve a movie using its ID",
@@ -394,6 +448,20 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "models.BulkInsertMoviesRequest": {
+            "type": "object",
+            "required": [
+                "movies"
+            ],
+            "properties": {
+                "movies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/models.CreateMovieRequest"
+                    }
+                }
+            }
+        },
         "models.CreateMovieRequest": {
             "type": "object",
             "required": [
