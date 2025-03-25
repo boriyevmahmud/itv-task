@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"itv-task/internal/models"
 	"log"
+	"time"
 
 	"go.uber.org/fx"
 	"gorm.io/driver/postgres"
@@ -30,5 +31,14 @@ func NewDatabase(cfg *Config) *gorm.DB {
 
 	log.Println("✅ Connected to database")
 	DB = db
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.Fatalf("❌ Failed to get SQL DB instance: %v", err)
+	}
+
+	sqlDB.SetMaxOpenConns(25)                 // Max open connections (tune based on DB capacity)
+	sqlDB.SetMaxIdleConns(10)                 // Max idle connections (reduces resource usage)
+	sqlDB.SetConnMaxLifetime(5 * time.Minute) // Time a connection can be reused
 	return db
 }

@@ -1,0 +1,49 @@
+1. Setup Project Structure
+	•	🏗 Initialized a new project using UberFx for Dependency Injection.
+	•	🌐 Used Gin for HTTP routing and request handling.
+	•	🗄 Implemented GORM with PostgreSQL/MySQL for ORM.
+	•	🔑 Implemented JWT-based authentication for security.
+
+2. Database Schema
+	•	✅ Created the movies table with the following fields:
+	•	id (auto-increment)
+	•	title (unique, indexed)
+	•	director (indexed)
+	•	year (indexed)
+	•	plot
+	•	created_at, updated_at, deleted_at (soft deletes)
+	•	✅ Configured connection pooling for optimized database performance.
+
+3. Endpoints Implementation
+	•	CRUD Endpoints Implemented:
+	•	✅ Create: POST /movies – Add a new movie.
+	•	✅ Read:
+	•	GET /movies – Retrieve all movies.
+	•	GET /movies/:id – Retrieve a specific movie by ID.
+	•	✅ Update: PUT /movies/:id – Modify a movie record.
+	•	✅ Delete: DELETE /movies/:id – Soft delete a movie.
+
+4. Transaction Handling
+	•	✅ Used Gorm transactions for batch insert operations (BulkInsertMovies).
+	•	✅ Ensured atomicity when updating related entities.
+
+5. Validation and Error Handling
+	•	✅ Validated requests using Gin binding rules (binding:"required,max=255", etc.).
+	•	✅ Handled errors properly with structured responses (utils.SendErrorResponse).
+
+6. Documentation
+	•	✅ Added Swagger documentation for all endpoints.
+	•	✅ Included request/response formats and examples.
+	•	✅ README includes:
+	•	Project setup instructions.
+	•	How to run the application (.env configuration).
+	•	Default login credentials (admin / password123).
+
+7. Deployment Considerations
+	•	✅ Dockerized the application (Dockerfile, docker-compose.yml).
+	•	✅ Environment variables handled using .env (copied from .env.example).
+
+8. Optimization and Scalability
+	•	✅ Optimized database queries with:
+	•	Indexes on title, director, year, and deleted_at.
+	•	✅ Configured Connection Pooling (SetMaxOpenConns, SetMaxIdleConns, SetConnMaxLifetime).

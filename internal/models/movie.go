@@ -7,15 +7,14 @@ import (
 )
 
 type Movie struct {
-	gorm.Model
-	ID        uint           `gorm:"primaryKey;autoIncrement" json:"id"`
-	Title     string         `gorm:"type:varchar(255);not null;uniqueIndex" json:"title"`
-	Director  string         `gorm:"type:varchar(255);not null" json:"director"`
-	Year      int            `gorm:"not null" json:"year"`
-	Plot      string         `gorm:"type:text" json:"plot"`
-	CreatedAt time.Time      `gorm:"autoCreateTime" json:"created_at"`
-	UpdatedAt time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
-	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+	ID        uint           `gorm:"primaryKey;autoIncrement"`
+	Title     string         `gorm:"type:varchar(255);not null;uniqueIndex:idx_movies_title"` // Unique index for title
+	Director  string         `gorm:"type:varchar(255);not null;index:idx_movies_director"`    // Index for director
+	Year      int            `gorm:"index:idx_movies_year"`                                   // Index for faster search by year
+	Plot      string         `gorm:"type:text"`
+	CreatedAt time.Time      `gorm:"autoCreateTime"`
+	UpdatedAt time.Time      `gorm:"autoUpdateTime"`
+	DeletedAt gorm.DeletedAt `gorm:"index:idx_movies_deleted_at"` // Index for soft deletes
 }
 
 type CreateMovieRequest struct {
