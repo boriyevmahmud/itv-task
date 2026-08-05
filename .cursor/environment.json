@@ -1,0 +1,17 @@
+{
+  "name": "Movie API",
+  "install": "bash .cursor/scripts/install.sh",
+  "start": "bash .cursor/scripts/start-db.sh",
+  "terminals": [
+    {
+      "name": "api-server",
+      "command": "go run ./cmd"
+    }
+  ],
+  "ports": [
+    {
+      "name": "api",
+      "port": 8080
+    }
+  ]
+}
